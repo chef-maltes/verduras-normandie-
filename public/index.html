@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedido Verduras — Normandie</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #FFFFFF;
+      --green-light:  #E8F5E9;   /* casillas en reposo */
+      --green-pastel: #C8E6C9;   /* casillas seleccionadas */
+      --green-btn:    #81C784;   /* botones principales */
+      --green-hover:  #66BB6A;   /* hover botones */
+      --green-tab:    #4CAF50;   /* tab activo / subrayado */
+      --text:         #2D3748;
+      --text-muted:   #718096;
+      --border:       #E2E8F0;
+      --shadow:       0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 48px;
+    }
+
+    /* ── HEADER ────────────────────────────────────────────── */
+    .header {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: var(--shadow);
+    }
+    .header h1 { font-size: 1rem; font-weight: 600; letter-spacing: -0.2px; }
+    .header .fecha { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── TABS ──────────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      background: white;
+      border-bottom: 2px solid var(--border);
+      padding: 0 16px;
+      position: sticky;
+      top: 57px;
+      z-index: 199;
+      box-shadow: var(--shadow);
+    }
+    .tab-btn {
+      padding: 11px 14px;
+      border: none;
+      background: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.18s, border-color 0.18s;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      color: var(--green-tab);
+      border-bottom-color: var(--green-tab);
+    }
+
+    /* ── CONTENT ───────────────────────────────────────────── */
+    .tab-content { display: none; padding: 20px 16px; max-width: 720px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+
+    /* ── NOMBRE ────────────────────────────────────────────── */
+    .nombre-section {
+      background: var(--green-light);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 22px;
+    }
+    .nombre-section label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+    .nombre-section input {
+      width: 100%;
+      padding: 9px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: white;
+      color: var(--text);
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .nombre-section input:focus {
+      outline: none;
+      border-color: var(--green-btn);
+      background: var(--green-pastel);
+    }
+
+    /* ── ALERT ─────────────────────────────────────────────── */
+    .alert {
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert-success { background: #F0FFF4; color: #276749; border: 1px solid #C6F6D5; }
+    .alert-error   { background: #FFF5F5; color: #9B2335; border: 1px solid #FED7D7; }
+
+    /* ── SECTION TITLE ─────────────────────────────────────── */
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 10px;
+      margin-top: 22px;
+    }
+
+    /* ── PRODUCTOS GRID ────────────────────────────────────── */
+    .productos-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+    @media (max-width: 480px) { .productos-grid { grid-template-columns: 1fr; } }
+
+    .producto-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 11px;
+      background: var(--green-light);
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      transition: border-color 0.18s;
+    }
+    .producto-item:focus-within { border-color: var(--green-btn); }
+
+    .producto-info { flex: 1; min-width: 0; }
+    .producto-nombre {
+      display: block;
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .producto-unidad { font-size: 0.68rem; color: var(--text-muted); }
+
+    .cantidad-input {
+      width: 62px;
+      padding: 5px 7px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+      text-align: center;
+      background: white;
+      color: var(--text);
+      flex-shrink: 0;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .cantidad-input:focus {
+      outline: none;
+      border-color: var(--green-btn);
+      background: var(--green-pastel);
+    }
+
+    /* ── EXTRAS ────────────────────────────────────────────── */
+    .extra-grid { display: grid; gap: 7px; }
+
+    .extra-item {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      padding: 9px 11px;
+      background: #F9FBE7;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+    }
+    .extra-item:focus-within { border-color: var(--green-btn); }
+
+    .extra-nombre {
+      flex: 1;
+      padding: 5px 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.83rem;
+      background: white;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .extra-nombre:focus {
+      outline: none;
+      border-color: var(--green-btn);
+      background: var(--green-pastel);
+    }
+
+    .extra-unidad {
+      width: 76px;
+      padding: 5px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.78rem;
+      background: white;
+      color: var(--text);
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .extra-unidad:focus {
+      outline: none;
+      border-color: var(--green-btn);
+      background: var(--green-pastel);
+    }
+
+    .extra-cant {
+      width: 62px;
+      padding: 5px 7px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+      text-align: center;
+      background: white;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .extra-cant:focus {
+      outline: none;
+      border-color: var(--green-btn);
+      background: var(--green-pastel);
+    }
+
+    /* ── BOTÓN ENVIAR ──────────────────────────────────────── */
+    .btn-enviar {
+      width: 100%;
+      padding: 13px;
+      background: var(--green-btn);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 22px;
+      transition: background 0.18s;
+      letter-spacing: 0.2px;
+    }
+    .btn-enviar:hover { background: var(--green-hover); }
+    .btn-enviar:disabled { background: #B0BEC5; cursor: not-allowed; }
+
+    /* ── RESUMEN ───────────────────────────────────────────── */
+    .resumen-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .resumen-meta .label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; }
+    .resumen-meta .personas { font-size: 0.78rem; color: var(--text-muted); }
+
+    .resumen-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .resumen-table th {
+      text-align: left;
+      padding: 9px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border);
+    }
+    .resumen-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .resumen-table tr:hover td { background: var(--green-light); }
+
+    .tag-persona {
+      display: inline-block;
+      background: var(--green-light);
+      color: #388E3C;
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin: 1px 2px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+    .empty-state .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+    /* ── WHATSAPP ──────────────────────────────────────────── */
+    .whatsapp-box {
+      background: #ECF4F1;
+      border-radius: 10px;
+      padding: 18px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.83rem;
+      white-space: pre-wrap;
+      min-height: 180px;
+      color: #1a1a1a;
+      line-height: 1.7;
+      margin-bottom: 14px;
+      user-select: all;
+    }
+
+    .btn-copiar {
+      width: 100%;
+      padding: 13px;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-copiar:hover { background: #1ebe5a; }
+    .btn-copiar.copied { background: var(--green-hover); }
+
+    .update-hint {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <h1>🥬 Pedido de Verduras — Normandie</h1>
+  <div class="fecha" id="fechaHeader"></div>
+</div>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="agregar"   onclick="showTab(this)">Agregar Pedido</button>
+  <button class="tab-btn"        data-tab="resumen"   onclick="showTab(this)">Resumen del Día</button>
+  <button class="tab-btn"        data-tab="finalizar" onclick="showTab(this)">Finalizar Pedido</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB 1 — AGREGAR
+════════════════════════════════════════════════════════════ -->
+<div id="tab-agregar" class="tab-content active">
+
+  <div class="nombre-section">
+    <label>Tu nombre</label>
+    <input type="text" id="nombreUsuario" placeholder="Ej: María González" autocomplete="name">
+  </div>
+
+  <div id="alertMsg" class="alert"></div>
+
+  <div class="section-title">Productos</div>
+  <div class="productos-grid" id="productosGrid"></div>
+
+  <div class="section-title">Productos Adicionales</div>
+  <div class="extra-grid" id="extrasGrid"></div>
+
+  <button class="btn-enviar" id="btnEnviar" onclick="enviarPedido()">✓ Enviar mi pedido</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB 2 — RESUMEN
+════════════════════════════════════════════════════════════ -->
+<div id="tab-resumen" class="tab-content">
+  <div id="resumenContent">
+    <div class="empty-state"><span class="icon">🥬</span>Cargando pedidos…</div>
+  </div>
+  <p class="update-hint">Se actualiza automáticamente cada 30 segundos.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB 3 — FINALIZAR
+════════════════════════════════════════════════════════════ -->
+<div id="tab-finalizar" class="tab-content">
+  <div class="section-title">Texto para WhatsApp</div>
+  <div class="whatsapp-box" id="whatsappText"></div>
+  <button class="btn-copiar" id="btnCopiar" onclick="copiarPedido()">
+    <span>📋</span> Copiar pedido
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
+<script>
+// ── Lista de productos ──────────────────────────────────────────────────────
+const PRODUCTOS = [
+  { nombre: "Escarola",               unidad: "unidad" },
+  { nombre: "Rúcula",                 unidad: "gr"     },
+  { nombre: "Berro",                  unidad: "gr"     },
+  { nombre: "Romero",                 unidad: "gr"     },
+  { nombre: "Tomillo",                unidad: "gr"     },
+  { nombre: "Limón sutil",            unidad: "kg"     },
+  { nombre: "Limón malla",            unidad: "unidad" },
+  { nombre: "Cebolla malla",          unidad: "unidad" },
+  { nombre: "Cebolla morada",         unidad: "kg"     },
+  { nombre: "Manzana verde",          unidad: "kg"     },
+  { nombre: "Manzana fuji/royal gala",unidad: "kg"     },
+  { nombre: "Pera",                   unidad: "kg"     },
+  { nombre: "Naranja",                unidad: "kg"     },
+  { nombre: "Pomelo",                 unidad: "kg"     },
+  { nombre: "Plátano",                unidad: "kg"     },
+  { nombre: "Durazno",                unidad: "kg"     },
+  { nombre: "Frutillas",              unidad: "kg"     },
+  { nombre: "Jengibre",               unidad: "kg"     },
+  { nombre: "Champiñones 2ª",         unidad: "kg"     },
+  { nombre: "Papa pelada",            unidad: "kg"     },
+  { nombre: "Pepino",                 unidad: "unidad" },
+  { nombre: "Pimentón rojo",          unidad: "unidad" },
+  { nombre: "Zanahoria",              unidad: "kg"     },
+  { nombre: "Tomate",                 unidad: "kg"     },
+  { nombre: "Cherry",                 unidad: "kg"     },
+  { nombre: "Papas con piel",         unidad: "kg"     },
+  { nombre: "Zapallo italiano",       unidad: "unidad" },
+  { nombre: "Berenjenas",             unidad: "unidad" },
+  { nombre: "Palta",                  unidad: "kg"     },
+  { nombre: "Lechuga lolo verde hid.",unidad: "unidad" },
+  { nombre: "Apio",                   unidad: "unidad" },
+  { nombre: "Cilantro",               unidad: "gr"     },
+  { nombre: "Menta",                  unidad: "kg"     },
+  { nombre: "Albahaca",               unidad: "gr"     },
+  { nombre: "Limón de pica",          unidad: "kg"     },
+  { nombre: "Espinaca limpia",        unidad: "kg"     },
+  { nombre: "Ajo",                    unidad: "kg"     },
+  { nombre: "Mayonesa Kraft",         unidad: "unidad" },
+  { nombre: "Cebollín",               unidad: "atado"  },
+  { nombre: "Ciboulette",             unidad: "atado"  },
+  { nombre: "Perejil",                unidad: "kg"     },
+  { nombre: "Zapallo camote",         unidad: "kg"     }
+];
+
+const UNIDADES = ["kg", "gr", "unidad", "atado", "litro", "caja"];
+
+let pedidosData = { fecha: '', pedidos: [] };
+let pollingTimer = null;
+
+// ── Init ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  setFechaHeader();
+  renderProductos();
+  renderExtras();
+  cargarPedidos();
+  startPolling();
+});
+
+function setFechaHeader() {
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('fechaHeader').textContent =
+    new Date().toLocaleDateString('es-CL', opts);
+}
+
+// ── Render productos ────────────────────────────────────────────────────────
+function renderProductos() {
+  document.getElementById('productosGrid').innerHTML = PRODUCTOS.map((p, i) => `
+    <div class="producto-item">
+      <div class="producto-info">
+        <span class="producto-nombre" title="${p.nombre}">${p.nombre}</span>
+        <span class="producto-unidad">${p.unidad}</span>
+      </div>
+      <input
+        type="number"
+        class="cantidad-input"
+        id="prod_${i}"
+        data-nombre="${p.nombre}"
+        data-unidad="${p.unidad}"
+        min="0"
+        step="0.5"
+        placeholder="0"
+      >
+    </div>
+  `).join('');
+}
+
+function renderExtras() {
+  document.getElementById('extrasGrid').innerHTML = [0, 1, 2].map(i => `
+    <div class="extra-item">
+      <input class="extra-nombre" type="text"   id="extra_nombre_${i}" placeholder="Producto extra ${i + 1}">
+      <select class="extra-unidad"              id="extra_unidad_${i}">
+        ${UNIDADES.map(u => `<option value="${u}">${u}</option>`).join('')}
+      </select>
+      <input class="extra-cant"  type="number"  id="extra_cant_${i}"   min="0" step="0.5" placeholder="0">
+    </div>
+  `).join('');
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+function showTab(btn) {
+  const tab = btn.dataset.tab;
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+
+  if (tab === 'resumen' || tab === 'finalizar') cargarPedidos();
+  if (tab === 'finalizar') renderWhatsApp();
+}
+
+// ── API ─────────────────────────────────────────────────────────────────────
+async function cargarPedidos() {
+  try {
+    const res = await fetch('/api/pedidos');
+    pedidosData = await res.json();
+    renderResumen();
+  } catch (e) {
+    console.error('Error al cargar pedidos:', e);
+  }
+}
+
+async function enviarPedido() {
+  const nombre = document.getElementById('nombreUsuario').value.trim();
+  if (!nombre) { showAlert('Por favor ingresa tu nombre antes de enviar.', 'error'); return; }
+
+  const items = [];
+
+  PRODUCTOS.forEach((p, i) => {
+    const val = parseFloat(document.getElementById('prod_' + i).value);
+    if (val > 0) items.push({ nombre: p.nombre, unidad: p.unidad, cantidad: val });
+  });
+
+  for (let i = 0; i < 3; i++) {
+    const n = document.getElementById(`extra_nombre_${i}`).value.trim();
+    const u = document.getElementById(`extra_unidad_${i}`).value;
+    const c = parseFloat(document.getElementById(`extra_cant_${i}`).value);
+    if (n && c > 0) items.push({ nombre: n, unidad: u, cantidad: c });
+  }
+
+  if (items.length === 0) { showAlert('Agrega al menos una cantidad antes de enviar.', 'error'); return; }
+
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  try {
+    const res = await fetch('/api/pedidos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, items })
+    });
+
+    if (res.ok) {
+      PRODUCTOS.forEach((p, i) => { document.getElementById('prod_' + i).value = ''; });
+      for (let i = 0; i < 3; i++) {
+        document.getElementById(`extra_nombre_${i}`).value = '';
+        document.getElementById(`extra_cant_${i}`).value = '';
+      }
+      showAlert(`✓ Pedido de ${nombre} enviado correctamente.`, 'success');
+      await cargarPedidos();
+    } else {
+      showAlert('Error del servidor. Intenta de nuevo.', 'error');
+    }
+  } catch (e) {
+    showAlert('Sin conexión. Verifica tu red e intenta de nuevo.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✓ Enviar mi pedido';
+  }
+}
+
+// ── Alerts ──────────────────────────────────────────────────────────────────
+function showAlert(msg, type) {
+  const el = document.getElementById('alertMsg');
+  el.textContent = msg;
+  el.className = `alert alert-${type}`;
+  el.style.display = 'block';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.display = 'none'; }, 4500);
+}
+
+// ── Resumen ──────────────────────────────────────────────────────────────────
+function calcularTotales() {
+  const totales = {};
+  (pedidosData.pedidos || []).forEach(pedido => {
+    pedido.items.forEach(item => {
+      if (!totales[item.nombre]) {
+        totales[item.nombre] = { cantidad: 0, unidad: item.unidad, personas: [] };
+      }
+      totales[item.nombre].cantidad += item.cantidad;
+      if (!totales[item.nombre].personas.includes(pedido.nombre)) {
+        totales[item.nombre].personas.push(pedido.nombre);
+      }
+    });
+  });
+  return totales;
+}
+
+function renderResumen() {
+  const content = document.getElementById('resumenContent');
+  const pedidos = pedidosData.pedidos || [];
+
+  if (pedidos.length === 0) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <span class="icon">🥬</span>
+        Aún no hay pedidos para hoy.<br>
+        <small>Los pedidos se resetean automáticamente a las 4 AM.</small>
+      </div>`;
+    return;
+  }
+
+  const totales  = calcularTotales();
+  const personas = [...new Set(pedidos.map(p => p.nombre))];
+
+  const filas = Object.entries(totales)
+    .sort((a, b) => a[0].localeCompare(b[0], 'es'))
+    .map(([nombre, d]) => `
+      <tr>
+        <td><strong>${nombre}</strong></td>
+        <td>${formatCantidad(d.cantidad)} ${d.unidad}</td>
+        <td>${d.personas.map(p => `<span class="tag-persona">${p}</span>`).join('')}</td>
+      </tr>
+    `).join('');
+
+  content.innerHTML = `
+    <div class="resumen-meta">
+      <div class="label">Total acumulado — ${Object.keys(totales).length} productos</div>
+      <div class="personas">👤 ${personas.join(' · ')}</div>
+    </div>
+    <table class="resumen-table">
+      <thead>
+        <tr><th>Producto</th><th>Total</th><th>Solicitado por</th></tr>
+      </thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+}
+
+// ── WhatsApp ─────────────────────────────────────────────────────────────────
+function renderWhatsApp() {
+  const el = document.getElementById('whatsappText');
+  const pedidos = pedidosData.pedidos || [];
+
+  if (pedidos.length === 0) {
+    el.textContent = 'No hay pedidos registrados aún.';
+    return;
+  }
+
+  const totales  = calcularTotales();
+  const personas = [...new Set(pedidos.map(p => p.nombre))];
+  const fecha    = new Date().toLocaleDateString('es-CL');
+
+  const lineas = Object.entries(totales)
+    .sort((a, b) => a[0].localeCompare(b[0], 'es'))
+    .map(([nombre, d]) => `• ${nombre}: ${formatCantidad(d.cantidad)} ${d.unidad}`)
+    .join('\n');
+
+  el.textContent =
+    `📋 *PEDIDO VERDURAS — NORMANDIE*\n` +
+    `📅 ${fecha}\n\n` +
+    `${lineas}\n\n` +
+    `👥 _Enviado por: ${personas.join(', ')}_`;
+}
+
+async function copiarPedido() {
+  const texto = document.getElementById('whatsappText').textContent;
+  const btn   = document.getElementById('btnCopiar');
+  try {
+    await navigator.clipboard.writeText(texto);
+    btn.classList.add('copied');
+    btn.innerHTML = '<span>✓</span> ¡Copiado!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<span>📋</span> Copiar pedido';
+    }, 2800);
+  } catch {
+    // fallback para Safari / contextos sin HTTPS
+    const ta = document.createElement('textarea');
+    ta.value = texto;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.innerHTML = '<span>✓</span> ¡Copiado!';
+    setTimeout(() => { btn.innerHTML = '<span>📋</span> Copiar pedido'; }, 2800);
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function formatCantidad(n) {
+  return n % 1 === 0 ? n.toString() : n.toFixed(1);
+}
+
+// ── Polling cada 30 s ─────────────────────────────────────────────────────────
+function startPolling() {
+  pollingTimer = setInterval(() => {
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab && activeTab.id !== 'tab-agregar') {
+      cargarPedidos();
+      if (activeTab.id === 'tab-finalizar') renderWhatsApp();
+    }
+  }, 30000);
+}
+</script>
+</body>
+</html>
